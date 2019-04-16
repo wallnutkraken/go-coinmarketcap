@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 )
 
 // Interface interface
@@ -103,6 +104,28 @@ type sortOptions struct {
 	PercentChange7D   string
 }
 
+type MarketQuoteOptions struct {
+	ID      string
+	Symbol  string
+	Convert string
+}
+
+type MarketQuoteInfo struct {
+	ID                int              `json:"id"`
+	Name              string           `json:"name"`
+	Symbol            string           `json:"symbol"`
+	Slug              string           `json:"slug"`
+	CirculatingSupply int              `json:"circulating_supply"`
+	TotalSupply       int              `json:"total_supply"`
+	MaxSupply         int              `json:"max_supply"`
+	DateAdded         time.Time        `json:"date_added"`
+	NumMarketPairs    int              `json:"num_market_pairs"`
+	CmcRank           int              `json:"cmc_rank"`
+	LastUpdated       time.Time        `json:"last_updated"`
+	Tags              []string         `json:"tags"`
+	Quote             map[string]Quote `json:"quote"`
+}
+
 // Client the CoinMarketCap client
 type Client struct {
 	proAPIKey string
@@ -143,6 +166,53 @@ func NewClient(cfg *Config) *Client {
 	return &Client{
 		proAPIKey: cfg.ProAPIKey,
 	}
+}
+
+// MarketQuote gets the latest market quote for 1 or more cryptocurrencies.
+// Use the "convert" option to return market values in multiple fiat and cryptocurrency conversions in the same call.
+func (s *Client) MarketQuote(options *MarketQuoteOptions) (map[string]MarketQuoteInfo, error) {
+	var params []string
+	if options == nil {
+		options = &MarketQuoteOptions{}
+	}
+	if options.ID != "" {
+		params = append(params, fmt.Sprintf("id=%s", options.ID))
+	}
+	if options.Symbol != "" {
+		params = append(params, fmt.Sprintf("symbol=%s", options.Symbol))
+	}
+	if options.Convert != "" {
+		params = append(params, fmt.Sprintf("convert=%s", options.Convert))
+	}
+
+	url := fmt.Sprintf("%s/cryptocurrency/quotes/latest?%s", baseURL, strings.Join(params, "&"))
+	body, err := s.makeReq(url)
+	resp := new(Response)
+	err = json.Unmarshal(body, &resp)
+	if err != nil {
+		return nil, err
+	}
+
+	var result = make(map[string]MarketQuoteInfo)
+	ifcs, ok := resp.Data.(map[string]interface{})
+	if !ok {
+		return nil, ErrCouldNotCast
+	}
+
+	for k, v := range ifcs {
+		info := MarketQuoteInfo{}
+		b, err := json.Marshal(v)
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(b, &info)
+		if err != nil {
+			return nil, err
+		}
+		result[k] = info
+	}
+
+	return result, nil
 }
 
 // CryptocurrencyInfo returns all static metadata for one or more cryptocurrencies including name, symbol, logo, and its various registered URLs.
