@@ -115,9 +115,9 @@ type MarketQuoteInfo struct {
 	Name              string           `json:"name"`
 	Symbol            string           `json:"symbol"`
 	Slug              string           `json:"slug"`
-	CirculatingSupply float64              `json:"circulating_supply"`
-	TotalSupply       float64              `json:"total_supply"`
-	MaxSupply         float64              `json:"max_supply"`
+	CirculatingSupply float64          `json:"circulating_supply"`
+	TotalSupply       float64          `json:"total_supply"`
+	MaxSupply         float64          `json:"max_supply"`
 	DateAdded         time.Time        `json:"date_added"`
 	NumMarketPairs    int              `json:"num_market_pairs"`
 	CmcRank           int              `json:"cmc_rank"`
@@ -191,6 +191,10 @@ func (s *Client) MarketQuote(options *MarketQuoteOptions) (map[string]MarketQuot
 	err = json.Unmarshal(body, &resp)
 	if err != nil {
 		return nil, competentError(err, body)
+	}
+
+	if resp.Status.ErrorCode != 0 {
+		return nil, fmt.Errorf("Error from CMC [%d]: %s", resp.Status.ErrorCode, resp.Status.ErrorMessage)
 	}
 
 	var result = make(map[string]MarketQuoteInfo)
