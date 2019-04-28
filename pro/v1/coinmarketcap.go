@@ -190,7 +190,7 @@ func (s *Client) MarketQuote(options *MarketQuoteOptions) (map[string]MarketQuot
 	resp := new(Response)
 	err = json.Unmarshal(body, &resp)
 	if err != nil {
-		return nil, err
+		return nil, competentError(err, body)
 	}
 
 	var result = make(map[string]MarketQuoteInfo)
@@ -203,16 +203,29 @@ func (s *Client) MarketQuote(options *MarketQuoteOptions) (map[string]MarketQuot
 		info := MarketQuoteInfo{}
 		b, err := json.Marshal(v)
 		if err != nil {
-			return nil, err
+			return nil, competentError(err, body)
 		}
 		err = json.Unmarshal(b, &info)
 		if err != nil {
-			return nil, err
+			return nil, competentError(err, body)
 		}
 		result[k] = info
 	}
 
 	return result, nil
+}
+
+func competentError(err error, body []byte) error {
+	if err == nil {
+		return nil
+	}
+	var bodyFirst string
+	if len(body) >= 20 {
+		bodyFirst = string(body)[:20]
+	} else {
+		bodyFirst = string(body)
+	}
+	return fmt.Errorf("CMC returned error [%s] with the first 20 characters being [%s]", err.Error(), bodyFirst)
 }
 
 // CryptocurrencyInfo returns all static metadata for one or more cryptocurrencies including name, symbol, logo, and its various registered URLs.
