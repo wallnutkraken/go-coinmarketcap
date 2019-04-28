@@ -115,9 +115,9 @@ type MarketQuoteInfo struct {
 	Name              string           `json:"name"`
 	Symbol            string           `json:"symbol"`
 	Slug              string           `json:"slug"`
-	CirculatingSupply int              `json:"circulating_supply"`
-	TotalSupply       int              `json:"total_supply"`
-	MaxSupply         int              `json:"max_supply"`
+	CirculatingSupply float64              `json:"circulating_supply"`
+	TotalSupply       float64              `json:"total_supply"`
+	MaxSupply         float64              `json:"max_supply"`
 	DateAdded         time.Time        `json:"date_added"`
 	NumMarketPairs    int              `json:"num_market_pairs"`
 	CmcRank           int              `json:"cmc_rank"`
